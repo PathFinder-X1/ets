@@ -1,0 +1,200 @@
+_schema-version: 3.3.0
+ID: opex-mb-apcp
+description: S/4 APCP CAP Project
+version: 1.0.0
+modules:
+  - name: opex-mb-apcp-srv
+    type: nodejs
+    path: gen/srv
+    requires:
+      - name: opex-mb-apcp-uaa
+      - name: opex-mb-apcp-dest
+      - name: opex-mb-apcp-hdi
+      - name: opex-mb-apcp-conn
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: ${default-url}
+    parameters:
+      buildpack: nodejs_buildpack
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install --production
+  - name: opex-mb-apcp-deployer
+    type: com.sap.application.content
+    path: .
+    requires:
+      - name: opex-mb-apcp-hrh
+        parameters:
+          content-target: true
+    build-parameters:
+      build-result: resources
+      requires:
+        - artifacts:
+            - opexmbapcpreporthtml5.zip
+          name: opexmbapcpreporthtml5
+          target-path: resources/
+        - artifacts:
+            - opexmbapcpindprjclshtml5.zip
+          name: opexmbapcpindprjclshtml5
+          target-path: resources/
+        - artifacts:
+            - opexmbapcpcolprjclshtml5.zip
+          name: opexmbapcpcolprjclshtml5
+          target-path: resources/
+        - artifacts:
+            - opexmbapcpmstblmainhtml5.zip
+          name: opexmbapcpmstblmainhtml5
+          target-path: resources/
+  - name: opex-mb-apcp-db
+    type: hdb
+    path: gen/db
+    requires:
+      - name: opex-mb-apcp-hdi
+    parameters:
+      buildpack: nodejs_buildpack
+  - name: opexmbapcpreporthtml5
+    type: html5
+    path: app/opex-mb-apcp-report-html5
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm install
+        - npm run build:cf
+      supported-platforms:
+        []
+  - name: opexmbapcpindprjclshtml5
+    type: html5
+    path: app/opex-mb-apcp-indprjcls-html5
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm install
+        - npm run build:cf
+      supported-platforms:
+        []
+  - name: opexmbapcpcolprjclshtml5
+    type: html5
+    path: app/opex-mb-apcp-colprjcls-html5
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm install
+        - npm run build:cf
+      supported-platforms:
+        []
+  - name: opexmbapcpmstblmainhtml5
+    type: html5
+    path: app/opex-mb-apcp-mstblmain-html5
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm install
+        - npm run build:cf
+      supported-platforms:
+        []
+  - name: opex-mb-apcp-destination-content
+    type: com.sap.application.content
+    requires:
+      - name: opex-mb-apcp-dest
+        parameters:
+          content-target: true
+      - name: opex-mb-apcp-hrh
+        parameters:
+          service-key:
+            name: opex-mb-apcp-hrh-key
+      - name: opex-mb-apcp-uaa
+        parameters:
+          service-key:
+            name: opex-mb-apcp-uaa-key
+    parameters:
+      content:
+        instance:
+          destinations:
+            - Name: opex_mb_apcp_approuter_opex_mb_apcp_hrh
+              ServiceInstanceName: opex-mb-apcp-hrh
+              ServiceKeyName: opex-mb-apcp-hrh-key
+              sap.cloud.service: opex-mb-apcp-approuter
+            - Authentication: OAuth2UserTokenExchange
+              Name: opex_mb_apcp_approuter_opex_mb_apcp_uaa
+              ServiceInstanceName: opex-mb-apcp-uaa
+              ServiceKeyName: opex-mb-apcp-uaa-key
+              sap.cloud.service: opex-mb-apcp-approuter
+          existing_destinations_policy: ignore
+    build-parameters:
+      no-source: true
+resources:
+  - name: opex-mb-apcp-hrr
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-name: opex-mb-apcp-hrr
+      service-plan: app-runtime
+  - name: opex-mb-apcp-uaa
+    type: org.cloudfoundry.managed-service
+    parameters:
+      path: ./xs-security.json
+      service: xsuaa
+      service-name: opex-mb-apcp-uaa
+      service-plan: application
+  - name: opex-mb-apcp-hrh
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-name: opex-mb-apcp-hrh
+      service-plan: app-host
+  - name: opex-mb-apcp-dest
+    type: org.cloudfoundry.managed-service
+    parameters:
+      config:
+        HTML5Runtime_enabled: true
+        init_data:
+          instance:
+            destinations:
+              - Authentication: NoAuthentication
+                HTML5.DynamicDestination: true
+                HTML5.ForwardAuthToken: true
+                Name: opex-mb-apcp-srv-api
+                ProxyType: Internet
+                Type: HTTP
+                URL: ~{srv-api/srv-url}
+              - Authentication: NoAuthentication
+                Name: ui5
+                ProxyType: Internet
+                Type: HTTP
+                URL: https://ui5.sap.com
+            existing_destinations_policy: update
+        version: 1.0.0
+      service: destination
+      service-name: opex-mb-apcp-dest
+      service-plan: lite
+    requires:
+      - name: srv-api  
+  - name: opex-mb-apcp-hdi
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-name: opex-mb-apcp-hdi
+      service-plan: hdi-shared
+    properties:
+      hdi-container-name: ${service-name}
+  - name: opex-mb-apcp-conn
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: connectivity
+      service-name: opex-mb-apcp-conn
+      service-plan: lite
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
