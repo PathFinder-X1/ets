@@ -1,0 +1,65 @@
+deploy doc:
+
+delete csv & test.http
+@(requires: 'authenticated-user')
+"kind": "hana"
+
+pckg
+
+{
+  "name": "opex-mb-apcp",
+  "version": "1.0.0",
+  "description": "A simple CAP project.",
+  "repository": "<Add your repository here>",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@cap-js/hana": "^1",
+    "@sap/cds": "^8",
+    "@sap/xsenv": "^5.4.0",
+    "@sap/xssec": "^4",
+    "axios": "^1.7.8",
+    "express": "^4",
+    "hdb": "^0.19.9",
+    "json-as-xlsx": "^2.5.6"
+  },
+  "devDependencies": {
+    "@cap-js/cds-types": "^0.6",
+    "@cap-js/sqlite": "^1",
+    "@sap/cds-dk": "^8",
+    "@sap/ux-specification": "^1.124.5",
+    "rimraf": "^5.0.5"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch-opex-mb-apcp-report-html5": "cds watch --open opex-mb-apcp-report-html5/webapp/index.html?sap-ui-xx-viewCache=false",
+    "watch-opex-mb-apcp-sinprjcls-html5": "cds watch --open opex-mb-apcp-sinprjcls-html5/webapp/index.html?sap-ui-xx-viewCache=false",
+    "watch-opex-mb-apcp-colprjcls-html5": "cds watch --open opex-mb-apcp-colprjcls-html5/webapp/index.html?sap-ui-xx-viewCache=false",
+    "watch-opex-mb-apcp-mstblmain-html5": "cds watch --open opex-mb-apcp-mstblmain-html5/webapp/index.html?sap-ui-xx-viewCache=false"
+  },
+  "sapux": [
+    "app/opex-mb-apcp-report-html5",
+    "app/opex-mb-apcp-indprjcls-html5",
+    "app/opex-mb-apcp-colprjcls-html5",
+    "app/opex-mb-apcp-mstblmain-html5"
+  ],
+  "cds": {
+    "cdsc": {
+      "severities": {
+        "odata-spec-violation-no-key": "Warning"
+      }
+    },
+    "hana": {
+      "deploy-format": "hdbtable"
+    },
+    "requires": {
+      "db": {
+        "kind": "hana"
+      }
+    }
+  },
+  "files": [
+    "db",
+    "srv"
+  ]
+}
